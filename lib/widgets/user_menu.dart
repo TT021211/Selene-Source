@@ -66,21 +66,23 @@ class _UserMenuState extends State<UserMenu> {
         await UserDataService.getDoubanImageSourceDisplayName();
     final m3u8ProxyUrl = await UserDataService.getM3u8ProxyUrl();
     final preferSpeedTest = await UserDataService.getPreferSpeedTest();
+    final localSearch = await UserDataService.getLocalSearch();
     final filterAdultContent = await UserDataService.getFilterAdultContent();
 
     if (mounted) {
       setState(() {
         _isLocalMode = isLocalMode;
         _username = username;
-      _role = _parseRoleFromCookies(cookies);
-      _doubanDataSource = doubanDataSource;
-      _doubanImageSource = doubanImageSource;
-      _m3u8ProxyUrl = m3u8ProxyUrl;
-      _preferSpeedTest = preferSpeedTest;
-      _localSearch = localSearch;
-      _filterAdultContent = filterAdultContent;
-  });
-}
+        _role = _parseRoleFromCookies(cookies);
+        _doubanDataSource = doubanDataSource;
+        _doubanImageSource = doubanImageSource;
+        _m3u8ProxyUrl = m3u8ProxyUrl;
+        _preferSpeedTest = preferSpeedTest;
+        _localSearch = localSearch;
+        _filterAdultContent = filterAdultContent;
+      });
+    }
+  }
 
   String _parseRoleFromCookies(String? cookies) {
     if (cookies == null || cookies.isEmpty) {
