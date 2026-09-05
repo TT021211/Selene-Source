@@ -75,9 +75,13 @@ class DownstreamService {
       }
 
       // 过滤包含黄色关键词的结果
-      final filteredResults = results.where((result) {
-        return !ContentFilterService.shouldFilter(result.typeName);
-      }).toList();
+      final filteredResults = <SearchResult>[];
+      for (final result in results) {
+      final shouldFilter = await ContentFilterService.shouldFilter(result.typeName);
+      if (!shouldFilter) {
+        filteredResults.add(result);
+      }  
+    }
 
       return filteredResults;
     } catch (error) {
