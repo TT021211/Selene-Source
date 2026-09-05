@@ -11,6 +11,7 @@ class UserDataService {
   static const String _preferSpeedTestKey = 'prefer_speed_test';
   static const String _localSearchKey = 'local_search';
   static const String _isLocalModeKey = 'is_local_mode';
+  static const String _filterAdultContentKey = 'filter_adult_content';
   
   // 内存缓存
   static bool? _isLocalModeCache;
@@ -257,4 +258,16 @@ class UserDataService {
   static bool getIsLocalModeSync() {
     return _isLocalModeCache ?? false;
   }
+
+  /// 保存「过滤成人内容」开关
+static Future<void> saveFilterAdultContent(bool enabled) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool(_filterAdultContentKey, enabled);
+}
+
+/// 获取「过滤成人内容」开关（默认 true = 开启过滤）
+static Future<bool> getFilterAdultContent() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getBool(_filterAdultContentKey) ?? true;
+}
 }
