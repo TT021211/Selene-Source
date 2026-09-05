@@ -42,7 +42,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           # 需要 Dart >= 3.8（dlna_dart 要求），Flutter 3.32+ 才带 Dart 3.8
-          flutter-version: "3.32.8"
+          flutter-version: "3.47.2"
           channel: "stable"
           cache: true
 
