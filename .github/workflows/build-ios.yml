@@ -21,7 +21,45 @@ jobs:
 
       - name: Flutter doctor
         run: flutter doctor -v
+      - name: Fix invalid pubspec config
+        run: |
+          # 删除 flutter: 下的非法 config 段
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("pubspec.yaml")
+          text = p.read_text(encoding="utf-8")
+          lines = text.splitlines(keepends=True)
+          out = []
+          i = 0
+          while i < len(lines):
+              line = lines[i]
+              # 匹配 "  config:" 且前面是 flutter 段常见缩进
+              if line.rstrip() == "  config:" or line.rstrip() == "  config:":
+                  # 跳过 config 及其子行（更多缩进的行）
+                  i += 1
+                  while i < len(lines) and (lines[i].startswith("    ") or lines[i].strip() == ""):
+                      # 空行也可能属于中间，这里只跳过仍缩进在 config 下的
+                      if lines[i].strip() == "":
+                          # 若下一非空仍是更深缩进则继续跳；简单处理：连续跳过以4空格开头的
+                          i += 1
+                          continue
+                      if lines[i].startswith("    "):
+                          i += 1
+                          continue
+                      break
+                  continue
+              out.append(line)
+              i += 1
+          p.write_text("".join(out), encoding="utf-8")
+          print("---- pubspec flutter section preview ----")
+          t = p.read_text(encoding="utf-8")
+          if "enable-swift-package-manager" in t or "\n  config:" in t:
+              raise SystemExit("config still present in pubspec.yaml")
+          print("pubspec.yaml fixed OK")
+          PY
 
+      - name: Get dependencies
+        run: flutter pub get
       - name: Get dependencies
         run: flutter pub get
 
