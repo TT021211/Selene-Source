@@ -37,6 +37,7 @@ class _UserMenuState extends State<UserMenu> {
   String _version = '';
   bool _preferSpeedTest = true;
   bool _localSearch = false;
+  bool _filterAdultContent = true;
   bool _isLocalMode = false;
 
   @override
@@ -65,21 +66,21 @@ class _UserMenuState extends State<UserMenu> {
         await UserDataService.getDoubanImageSourceDisplayName();
     final m3u8ProxyUrl = await UserDataService.getM3u8ProxyUrl();
     final preferSpeedTest = await UserDataService.getPreferSpeedTest();
-    final localSearch = await UserDataService.getLocalSearch();
+    final filterAdultContent = await UserDataService.getFilterAdultContent();
 
     if (mounted) {
       setState(() {
         _isLocalMode = isLocalMode;
         _username = username;
-        _role = _parseRoleFromCookies(cookies);
-        _doubanDataSource = doubanDataSource;
-        _doubanImageSource = doubanImageSource;
-        _m3u8ProxyUrl = m3u8ProxyUrl;
-        _preferSpeedTest = preferSpeedTest;
-        _localSearch = localSearch;
-      });
-    }
-  }
+      _role = _parseRoleFromCookies(cookies);
+      _doubanDataSource = doubanDataSource;
+      _doubanImageSource = doubanImageSource;
+      _m3u8ProxyUrl = m3u8ProxyUrl;
+      _preferSpeedTest = preferSpeedTest;
+      _localSearch = localSearch;
+      _filterAdultContent = filterAdultContent;
+  });
+}
 
   String _parseRoleFromCookies(String? cookies) {
     if (cookies == null || cookies.isEmpty) {
@@ -817,6 +818,26 @@ class _UserMenuState extends State<UserMenu> {
                     ),
                     // 本地搜索选项（本地模式下不显示）
                     if (!_isLocalMode) ...[
+// 分割线
+Container(
+  height: 1,
+  color: widget.isDarkMode
+      ? const Color(0xFF374151)
+      : const Color(0xFFe5e7eb),
+),
+// 过滤成人内容选项
+_buildToggleOption(
+  title: '过滤成人内容',
+  value: _filterAdultContent,
+  onChanged: (value) async {
+    await UserDataService.saveFilterAdultContent(value);
+    if (!mounted) return;
+    setState(() {
+      _filterAdultContent = value;
+    });
+  },
+  icon: LucideIcons.shield,
+), 
                       // 分割线
                       Container(
                         height: 1,
