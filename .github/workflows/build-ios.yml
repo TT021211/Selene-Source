@@ -12,7 +12,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 双保险：构建前删掉非法的 flutter.config
+      # 双保险：删掉 pubspec.yaml 里非法的 flutter.config
       - name: Fix invalid pubspec config
         run: |
           python3 - <<'PY'
@@ -34,14 +34,13 @@ jobs:
           text = "".join(out)
           p.write_text(text, encoding="utf-8")
           if "enable-swift-package-manager" in text or "\n  config:" in text:
-              raise SystemExit("ERROR: config still present")
+              raise SystemExit("ERROR: config still present in pubspec.yaml")
           print("pubspec.yaml cleaned OK")
           PY
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          # 需要 Dart >= 3.8（dlna_dart 要求），Flutter 3.32+ 才带 Dart 3.8
           flutter-version: "3.47.2"
           channel: "stable"
           cache: true
@@ -60,13 +59,45 @@ jobs:
           pod install --repo-update
           cd ..
 
+      # 关闭代码签名，避免 Development Team 报错
+      - name: Disable code signing
+        run: |
+          # Release.xcconfig
+          cat >> ios/Flutter/Release.xcconfig <<'EOF'
+          CODE_SIGNING_ALLOWED=NO
+          CODE_SIGNING_REQUIRED=NO
+          CODE_SIGN_IDENTITY=
+          DEVELOPMENT_TEAM=
+          EOF
+
+          # 顺手改一下 project.pbxproj 里的签名相关设置
+          sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' ios/Runner.xcodeproj/project.pbxproj || true
+          sed -i '' 's/DEVELOPMENT_TEAM = [A-Z0-9]*;/DEVELOPMENT_TEAM = "";/g' ios/Runner.xcodeproj/project.pbxproj || true
+
       - name: Build iOS (no codesign)
-        run: flutter build ios --release --no-codesign
+        run: |
+          flutter build ios --release --no-codesign \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=- \
+            DEVELOPMENT_TEAM=
 
       - name: Pack IPA
         run: |
+          APP_PATH=""
+          if [ -d "build/ios/iphoneos/Runner.app" ]; then
+            APP_PATH="build/ios/iphoneos/Runner.app"
+          elif [ -d "build/ios/Release-iphoneos/Runner.app" ]; then
+            APP_PATH="build/ios/Release-iphoneos/Runner.app"
+          else
+            echo "Runner.app not found"
+            find build/ios -name "Runner.app" -type d || true
+            exit 1
+          fi
+
+          rm -rf Payload
           mkdir -p Payload
-          cp -r build/ios/iphoneos/Runner.app Payload/
+          cp -R "$APP_PATH" Payload/
           zip -r selene-unsigned.ipa Payload
           ls -lh selene-unsigned.ipa
 
